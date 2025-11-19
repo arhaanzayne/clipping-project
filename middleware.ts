@@ -1,13 +1,10 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-export default clerkMiddleware({
-  publicRoutes: ["/"], // homepage stays public
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
-    "/((?!.*\\..*|_next).*)",
-    "/",
-    "/(api|trpc)(.*)",
+    '/((?!.*\\..*|_next).*)',
+    '/',
   ],
 };
