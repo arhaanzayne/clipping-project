@@ -1,17 +1,23 @@
-import { ClerkProvider } from "@clerk/nextjs";
+// app/layout.tsx
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata = {
   title: "Clipping Platform",
   description: "Your Clips. Your Earnings.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body>{children}</body>
-      </html>
-    </ClerkProvider>
+        <html lang="en" suppressHydrationWarning>
+
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
   );
 }

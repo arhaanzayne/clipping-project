@@ -1,9 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const ADMINS = ["user_35hhkh9XkRoKcxzkADanXPsQj0t"]; // YOUR ADMIN ID
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+
+  // Redirect admin users to /admin immediately
+  useEffect(() => {
+    if (isLoaded && user && ADMINS.includes(user.id)) {
+      router.replace("/admin");
+    }
+  }, [user, isLoaded, router]);
+
   return (
     <div style={{ display: "flex", height: "100vh", background: "#0d0f17", color: "white" }}>
       
@@ -26,10 +40,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <nav style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <Link href="/dashboard" style={{ color: "white", opacity: 0.85 }}>🏠 Dashboard</Link>
-            <Link href="/submit" style={{ color: "white", opacity: 0.85 }}>📤 Submit Clip</Link>
-            <Link href="/my-clips" style={{ color: "white", opacity: 0.85 }}>🎬 My Clips</Link>
-            <Link href="/earnings" style={{ color: "white", opacity: 0.85 }}>💰 Earnings</Link>
-            <Link href="/profile" style={{ color: "white", opacity: 0.85 }}>👤 Profile</Link>
+            <Link href="/dashboard/submit-clip" style={{ color: "white", opacity: 0.85 }}>📤 Submit Clip</Link>
+            <Link href="/dashboard/my-clips" style={{ color: "white", opacity: 0.85 }}>🎬 My Clips</Link>
+            <Link href="/dashboard/earnings" style={{ color: "white", opacity: 0.85 }}>💰 Earnings</Link>
+            <Link href="/dashboard/profile" style={{ color: "white", opacity: 0.85 }}>👤 Profile</Link>
           </nav>
         </div>
 
@@ -45,4 +59,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
-
