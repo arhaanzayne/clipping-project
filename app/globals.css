@@ -1,3 +1,11 @@
+html, body {
+  background-color: #0d0f17 !important;
+  min-height: 100%;
+  height: auto;
+}
+
+
+
 @import "tailwindcss";
 
 :root {
@@ -23,4 +31,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+html,
+body {
+  background-color: #0d0f17; /* same as your layout */
 }

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-// ✅ Type for our accounts list (fixes your errors)
 type VerificationAccount = {
   id: string;
+  user_id: string;
   platform: string;
   username: string;
+  is_verified: boolean;
 };
 
 export default function DashboardPage() {
@@ -15,17 +16,30 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchAccounts() {
-      const res = await fetch("/api/accounts/list");
-      const data = await res.json();
-      setAccounts(data.accounts || []);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/accounts/list");
+        const json = await res.json();
+
+        if (!res.ok) {
+          console.error("DASHBOARD API ERROR:", json);
+          setAccounts([]);
+          return;
+        }
+
+        setAccounts(json.accounts || []);
+      } catch (err) {
+        console.error("DASHBOARD FETCH ERROR:", err);
+        setAccounts([]);
+      } finally {
+        setLoading(false);
+      }
     }
+
     fetchAccounts();
   }, []);
 
   if (loading) return <p style={{ padding: 20 }}>Loading...</p>;
 
-  // Group accounts by platform
   const instagram = accounts.filter((a) => a.platform === "instagram");
   const youtube = accounts.filter((a) => a.platform === "youtube");
   const tiktok = accounts.filter((a) => a.platform === "tiktok");
@@ -40,19 +54,16 @@ export default function DashboardPage() {
         accounts={instagram}
         addLink="/dashboard/verify/instagram"
       />
-
       <Section
         title="YouTube Accounts"
         accounts={youtube}
         addLink="/dashboard/verify/youtube"
       />
-
       <Section
         title="TikTok Accounts"
         accounts={tiktok}
         addLink="/dashboard/verify/tiktok"
       />
-
       <Section
         title="X (Twitter) Accounts"
         accounts={x}

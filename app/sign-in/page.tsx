@@ -1,5 +1,12 @@
-import { redirect } from "next/navigation";
+// app/sign-in/page.tsx
+"use client";
 
-export default function Page() {
-  redirect("https://free-impala-0.accounts.dev/sign-in");
+import { SignIn } from "@clerk/nextjs";
+
+export default function SignInPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      <SignIn afterSignInUrl="/dashboard" redirectUrl="/dashboard" />
+    </div>
+  );
 }

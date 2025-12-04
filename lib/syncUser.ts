@@ -5,9 +5,10 @@ export async function syncUser() {
     });
 
     if (!res.ok) {
-      console.error("Sync user failed:", await res.text());
+      console.warn("Sync user skipped (no session yet).");
+      return;
     }
   } catch (err) {
-    console.error("Sync user error:", err);
+    console.error("Sync error:", err);
   }
 }

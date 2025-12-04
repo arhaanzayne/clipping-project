@@ -1,9 +1,12 @@
+export const dynamic = "force-dynamic";  // 🔥 REQUIRED FIX
+
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 const ADMINS = [
-  "user_35hhkh9XkRoKcxzkADanXPsQj0t"  // <-- YOUR ADMIN ID
+  "user_35hhkh9XkRoKcxzkADanXPsQj0t", // YOU
+  "user_35i79wan4GYXipzY99M7Uwlgfk3" // NEW ADMIN
 ];
 
 export default async function AdminLayout({
@@ -13,14 +16,12 @@ export default async function AdminLayout({
 }) {
   const user = await currentUser();
 
-  // CHECK ADMIN ACCESS
   if (!user || !ADMINS.includes(user.id)) {
-    redirect("/dashboard"); // block non-admins
+    redirect("/dashboard");
   }
 
   return (
     <div style={{ display: "flex", height: "100vh", background: "#0d0f17", color: "white" }}>
-      
       {/* SIDEBAR */}
       <aside
         style={{
@@ -30,7 +31,7 @@ export default async function AdminLayout({
           borderRight: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
           flexDirection: "column",
-          gap: "20px"
+          gap: "20px",
         }}
       >
         <h2 style={{ marginBottom: "20px", fontSize: "22px" }}>🛠 Admin Panel</h2>
@@ -40,12 +41,11 @@ export default async function AdminLayout({
           <Link href="/admin/pending" style={{ opacity: 0.85 }}>⏳ Pending Clips</Link>
           <Link href="/admin/clips" style={{ opacity: 0.85 }}>🎬 All Clips</Link>
           <Link href="/admin/users" style={{ opacity: 0.85 }}>👥 Users</Link>
-          <Link href="/admin/accounts" style={{ opacity: 0.85 }}>📱 Accounts</Link>
+          <Link href="/admin/payouts" style={{ opacity: 0.85 }}>🧾 Payouts</Link>
           <Link href="/admin/analytics" style={{ opacity: 0.85 }}>📊 Analytics</Link>
           <Link href="/admin/campaigns" style={{ color: "white", opacity: 0.85 }}>
-  📢 Campaigns
-</Link>
-
+            📢 Campaigns
+          </Link>
         </nav>
       </aside>
 

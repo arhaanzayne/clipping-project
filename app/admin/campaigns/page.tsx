@@ -32,8 +32,9 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showModal, setShowModal] = useState(false);
 
-  // EDIT STATES
+  // EDIT / CREATE STATES
   const [editId, setEditId] = useState<string | null>(null);
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [rpmYt, setRpmYt] = useState("");
@@ -64,6 +65,25 @@ export default function CampaignsPage() {
     loadCampaigns();
   }, []);
 
+  // RESET FORM FOR CREATE
+  function resetForm() {
+    setEditId(null);
+    setName("");
+    setDescription("");
+    setRpmYt("");
+    setRpmTt("");
+    setRpmIg("");
+    setRpmX("");
+    setSopText("");
+    setSopUrl("");
+    setPlatforms({
+      youtube: false,
+      tiktok: false,
+      instagram: false,
+      x: false,
+    });
+  }
+
   // OPEN EDIT MODAL
   function startEdit(c: Campaign) {
     setEditId(c.id);
@@ -84,12 +104,10 @@ export default function CampaignsPage() {
     setShowModal(true);
   }
 
-  // UPDATE
-  async function handleUpdate() {
-    if (!editId) return;
-
-    await fetch(`/admin/campaigns/api/${editId}`, {
-      method: "PUT",
+  // CREATE NEW CAMPAIGN
+  async function handleCreate() {
+    const res = await fetch(`/admin/campaigns/api/`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
@@ -104,6 +122,37 @@ export default function CampaignsPage() {
       }),
     });
 
+    const json = await res.json();
+    console.log("CREATE RESPONSE:", json);
+
+    setShowModal(false);
+    await loadCampaigns();
+  }
+
+  // UPDATE
+  async function handleUpdate() {
+    if (!editId) return;
+
+    const res = await fetch(`/admin/campaigns/api`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editId,
+        name,
+        description,
+        rpm_youtube: Number(rpmYt),
+        rpm_tiktok: Number(rpmTt),
+        rpm_instagram: Number(rpmIg),
+        rpm_x: Number(rpmX),
+        sop_text: sopText,
+        sop_url: sopUrl,
+        enabled_platforms: platforms,
+      }),
+    });
+
+    const json = await res.json();
+    console.log("UPDATE RESPONSE:", json);
+
     setShowModal(false);
     await loadCampaigns();
   }
@@ -117,6 +166,19 @@ export default function CampaignsPage() {
   return (
     <div className="p-6 text-white">
       <h1 className="text-2xl font-bold mb-6">📢 Campaigns</h1>
+
+      {/* CREATE BUTTON */}
+      <div className="flex justify-end mb-4">
+        <button
+          className="px-4 py-2 bg-blue-600 rounded"
+          onClick={() => {
+            resetForm();
+            setShowModal(true);
+          }}
+        >
+          + New Campaign
+        </button>
+      </div>
 
       {/* TABLE */}
       <table className="w-full text-left border border-gray-700 mt-4">
@@ -136,19 +198,13 @@ export default function CampaignsPage() {
 
               <td className="p-3 flex gap-2">
                 {c.enabled_platforms?.youtube && (
-                  <span className="px-2 py-1 text-xs bg-red-600 rounded">
-                    YT
-                  </span>
+                  <span className="px-2 py-1 text-xs bg-red-600 rounded">YT</span>
                 )}
                 {c.enabled_platforms?.tiktok && (
-                  <span className="px-2 py-1 text-xs bg-black rounded">
-                    TT
-                  </span>
+                  <span className="px-2 py-1 text-xs bg-black rounded">TT</span>
                 )}
                 {c.enabled_platforms?.instagram && (
-                  <span className="px-2 py-1 text-xs bg-pink-600 rounded">
-                    IG
-                  </span>
+                  <span className="px-2 py-1 text-xs bg-pink-600 rounded">IG</span>
                 )}
                 {c.enabled_platforms?.x && (
                   <span className="px-2 py-1 text-xs bg-gray-500 rounded">X</span>
@@ -156,8 +212,8 @@ export default function CampaignsPage() {
               </td>
 
               <td className="p-3 text-sm text-gray-300">
-                IG: {c.rpm_instagram} · TT: {c.rpm_tiktok} · YT: {c.rpm_youtube} ·
-                X: {c.rpm_x}
+                IG: {c.rpm_instagram} · TT: {c.rpm_tiktok} · YT: {c.rpm_youtube} · X:{" "}
+                {c.rpm_x}
               </td>
 
               <td className="p-3 text-gray-400 text-sm">
@@ -184,18 +240,20 @@ export default function CampaignsPage() {
         </tbody>
       </table>
 
-      {/* EDIT MODAL */}
+      {/* EDIT / CREATE MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center">
           <div className="bg-gray-900 p-6 rounded-lg w-[500px]">
-            <h2 className="text-xl font-bold mb-4">Edit Campaign</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {editId ? "Edit Campaign" : "Create Campaign"}
+            </h2>
 
             <div className="flex flex-col gap-3">
-
               <input
                 value={name}
                 className="p-2 bg-gray-800 border border-gray-700 rounded"
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Campaign name"
               />
 
               <textarea
@@ -203,6 +261,7 @@ export default function CampaignsPage() {
                 rows={3}
                 className="p-2 bg-gray-800 border border-gray-700 rounded"
                 onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description"
               />
 
               <div className="grid grid-cols-2 gap-3">
@@ -210,21 +269,25 @@ export default function CampaignsPage() {
                   value={rpmYt}
                   onChange={(e) => setRpmYt(e.target.value)}
                   className="p-2 bg-gray-800 border border-gray-700 rounded"
+                  placeholder="RPM YT"
                 />
                 <input
                   value={rpmTt}
                   onChange={(e) => setRpmTt(e.target.value)}
                   className="p-2 bg-gray-800 border border-gray-700 rounded"
+                  placeholder="RPM TT"
                 />
                 <input
                   value={rpmIg}
                   onChange={(e) => setRpmIg(e.target.value)}
                   className="p-2 bg-gray-800 border border-gray-700 rounded"
+                  placeholder="RPM IG"
                 />
                 <input
                   value={rpmX}
                   onChange={(e) => setRpmX(e.target.value)}
                   className="p-2 bg-gray-800 border border-gray-700 rounded"
+                  placeholder="RPM X"
                 />
               </div>
 
@@ -233,12 +296,14 @@ export default function CampaignsPage() {
                 rows={3}
                 className="p-2 bg-gray-800 border border-gray-700 rounded"
                 onChange={(e) => setSopText(e.target.value)}
+                placeholder="SOP text"
               />
 
               <input
                 value={sopUrl}
                 className="p-2 bg-gray-800 border border-gray-700 rounded"
                 onChange={(e) => setSopUrl(e.target.value)}
+                placeholder="SOP URL"
               />
 
               {/* PLATFORM CHECKBOXES */}
@@ -248,10 +313,7 @@ export default function CampaignsPage() {
                     type="checkbox"
                     checked={platforms.youtube}
                     onChange={(e) =>
-                      setPlatforms({
-                        ...platforms,
-                        youtube: e.target.checked,
-                      })
+                      setPlatforms({ ...platforms, youtube: e.target.checked })
                     }
                   />{" "}
                   YouTube
@@ -262,10 +324,7 @@ export default function CampaignsPage() {
                     type="checkbox"
                     checked={platforms.tiktok}
                     onChange={(e) =>
-                      setPlatforms({
-                        ...platforms,
-                        tiktok: e.target.checked,
-                      })
+                      setPlatforms({ ...platforms, tiktok: e.target.checked })
                     }
                   />{" "}
                   TikTok
@@ -276,10 +335,7 @@ export default function CampaignsPage() {
                     type="checkbox"
                     checked={platforms.instagram}
                     onChange={(e) =>
-                      setPlatforms({
-                        ...platforms,
-                        instagram: e.target.checked,
-                      })
+                      setPlatforms({ ...platforms, instagram: e.target.checked })
                     }
                   />{" "}
                   Instagram
@@ -290,10 +346,7 @@ export default function CampaignsPage() {
                     type="checkbox"
                     checked={platforms.x}
                     onChange={(e) =>
-                      setPlatforms({
-                        ...platforms,
-                        x: e.target.checked,
-                      })
+                      setPlatforms({ ...platforms, x: e.target.checked })
                     }
                   />{" "}
                   X
@@ -309,19 +362,26 @@ export default function CampaignsPage() {
                   Cancel
                 </button>
 
-                <button
-                  className="px-4 py-2 bg-green-600 rounded"
-                  onClick={handleUpdate}
-                >
-                  Update
-                </button>
+                {editId ? (
+                  <button
+                    className="px-4 py-2 bg-green-600 rounded"
+                    onClick={handleUpdate}
+                  >
+                    Update
+                  </button>
+                ) : (
+                  <button
+                    className="px-4 py-2 bg-blue-600 rounded"
+                    onClick={handleCreate}
+                  >
+                    Create
+                  </button>
+                )}
               </div>
-
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

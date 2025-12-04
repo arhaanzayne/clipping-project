@@ -4,23 +4,48 @@ import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { syncUser } from "@/lib/syncUser";
 
-const ADMINS = ["user_35hhkh9XkRoKcxzkADanXPsQj0t"]; // YOUR ADMIN ID
+const ADMINS = [
+  "user_35hhkh9XkRoKcxzkADanXPsQj0t", // YOU
+  "user_35i79wan4GYXipzY99M7Uwlgfk3" // NEW ADMIN
+];
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded } = useUser();
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
-  // Redirect admin users to /admin immediately
   useEffect(() => {
-    if (isLoaded && user && ADMINS.includes(user.id)) {
-      router.replace("/admin");
+    if (!isLoaded) return; // wait for Clerk
+
+    // 🛑 No session at all → go sign in
+    if (!isSignedIn || !user?.id) {
+      router.push("/sign-in");
+      return;
     }
-  }, [user, isLoaded, router]);
+
+    // ✅ Definitely logged in now
+    syncUser();
+
+    // ✅ Admin redirect
+    if (ADMINS.includes(user.id)) {
+      router.push("/admin");
+    }
+  }, [isLoaded, isSignedIn, user?.id, router]);
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#0d0f17", color: "white" }}>
-      
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "#0d0f17",
+        color: "white",
+      }}
+    >
       {/* SIDEBAR */}
       <aside
         style={{
@@ -31,6 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          height: "100%",
         }}
       >
         <div>
@@ -38,12 +64,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ⚡ Clipping Panel
           </h2>
 
-          <nav style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <Link href="/dashboard" style={{ color: "white", opacity: 0.85 }}>🏠 Dashboard</Link>
-            <Link href="/dashboard/submit-clip" style={{ color: "white", opacity: 0.85 }}>📤 Submit Clip</Link>
-            <Link href="/dashboard/my-clips" style={{ color: "white", opacity: 0.85 }}>🎬 My Clips</Link>
-            <Link href="/dashboard/earnings" style={{ color: "white", opacity: 0.85 }}>💰 Earnings</Link>
-            <Link href="/dashboard/profile" style={{ color: "white", opacity: 0.85 }}>👤 Profile</Link>
+          <nav
+            style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+          >
+            <Link href="/dashboard" style={{ color: "white", opacity: 0.85 }}>
+              🏠 Dashboard
+            </Link>
+            <Link
+              href="/dashboard/submit-clip"
+              style={{ color: "white", opacity: 0.85 }}
+            >
+              📤 Submit Clip
+            </Link>
+            <Link
+              href="/dashboard/my-clips"
+              style={{ color: "white", opacity: 0.85 }}
+            >
+              🎬 My Clips
+            </Link>
+            <Link
+              href="/dashboard/earnings"
+              style={{ color: "white", opacity: 0.85 }}
+            >
+              💰 Earnings
+            </Link>
+            <Link
+              href="/dashboard/payout-settings"
+              style={{ color: "white", opacity: 0.85 }}
+            >
+              🏦 Payout Settings
+            </Link>
+            <Link
+              href="/dashboard/profile"
+              style={{ color: "white", opacity: 0.85 }}
+            >
+              👤 Profile
+            </Link>
           </nav>
         </div>
 
@@ -52,8 +108,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main style={{ flex: 1, padding: "40px" }}>
+      <main
+        style={{
+          flex: 1,
+          padding: "40px",
+          background: "#0d0f17",
+        }}
+      >
         {children}
       </main>
     </div>

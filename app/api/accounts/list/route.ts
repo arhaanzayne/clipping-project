@@ -5,8 +5,11 @@ import { createClient } from "@supabase/supabase-js";
 export async function GET(req: NextRequest) {
   const { userId } = getAuth(req);
 
+  // 👇 Changed this part
   if (!userId) {
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    // When there is no logged-in user, just return an empty list
+    // instead of 401 to avoid the console error.
+    return NextResponse.json({ accounts: [] }, { status: 200 });
   }
 
   const supabase = createClient(
