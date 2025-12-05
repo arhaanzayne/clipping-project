@@ -37,8 +37,10 @@ export default function Home() {
             cursor: "pointer",
           }}
           onClick={() =>
-            window.location.href =
-              "https://free-impala-0.accounts.dev/sign-in?redirect_url=http://localhost:3000/dashboard"
+            // 🔥 FIX: No more localhost
+            // Clerk will automatically use the correct domain (dev or production)
+            (window.location.href =
+              "/sign-in?redirect_url=/dashboard")
           }
         >
           Get Started
