@@ -94,12 +94,7 @@ export default function DashboardLayout({
             >
               🏦 Payout Settings
             </Link>
-            <Link
-              href="/dashboard/profile"
-              style={{ color: "white", opacity: 0.85 }}
-            >
-              👤 Profile
-            </Link>
+            
           </nav>
         </div>
 
