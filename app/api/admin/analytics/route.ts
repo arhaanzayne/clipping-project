@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = supabaseAdmin;
@@ -8,14 +11,26 @@ export async function GET() {
     const [usersRes, clipsRes, earningsRes, campaignsRes] = await Promise.all([
       supabase.from("users").select("clerk_id, email"),
       supabase.from("clips").select("user_id, status, platform, campaign_id"),
-      supabase.from("earnings").select("user_id, platform, amount, campaign_id"),
+      supabase.from("earnings").select("user_id, platform, amount"),
       supabase.from("campaigns").select("id, name"),
     ]);
 
-    if (usersRes.error) throw usersRes.error;
-    if (clipsRes.error) throw clipsRes.error;
-    if (earningsRes.error) throw earningsRes.error;
-    if (campaignsRes.error) throw campaignsRes.error;
+    if (usersRes.error) {
+      console.error("Users error:", usersRes.error);
+      return NextResponse.json({ error: usersRes.error.message }, { status: 500 });
+    }
+    if (clipsRes.error) {
+      console.error("Clips error:", clipsRes.error);
+      return NextResponse.json({ error: clipsRes.error.message }, { status: 500 });
+    }
+    if (earningsRes.error) {
+      console.error("Earnings error:", earningsRes.error);
+      return NextResponse.json({ error: earningsRes.error.message }, { status: 500 });
+    }
+    if (campaignsRes.error) {
+      console.error("Campaigns error:", campaignsRes.error);
+      return NextResponse.json({ error: campaignsRes.error.message }, { status: 500 });
+    }
 
     const users = usersRes.data ?? [];
     const clips = clipsRes.data ?? [];
@@ -25,7 +40,7 @@ export async function GET() {
     // --- GLOBAL METRICS ---
     const totalUsers = users.length;
     const totalClips = clips.length;
-    const totalApprovedClips = clips.filter(c => c.status === "approved").length;
+    const totalApprovedClips = clips.filter((c) => c.status === "approved").length;
     const totalCampaigns = campaigns.length;
 
     const totalEarnings = earnings.reduce(
@@ -35,46 +50,40 @@ export async function GET() {
 
     // --- EARNINGS PER USER ---
     const earningsPerUser: Record<string, number> = {};
-    users.forEach(u => {
-      earningsPerUser[u.clerk_id] = 0;
-    });
-
-    earnings.forEach(e => {
-      if (!earningsPerUser[e.user_id]) {
-        earningsPerUser[e.user_id] = 0;
-      }
-      earningsPerUser[e.user_id] += Number(e.amount || 0);
+    earnings.forEach((e) => {
+      const uid = e.user_id;
+      if (!earningsPerUser[uid]) earningsPerUser[uid] = 0;
+      earningsPerUser[uid] += Number(e.amount || 0);
     });
 
     // --- EARNINGS PER PLATFORM ---
     const earningsPerPlatform: Record<string, number> = {};
-    earnings.forEach(e => {
-      if (!earningsPerPlatform[e.platform]) {
-        earningsPerPlatform[e.platform] = 0;
-      }
-      earningsPerPlatform[e.platform] += Number(e.amount || 0);
+    earnings.forEach((e) => {
+      const p = e.platform || "unknown";
+      if (!earningsPerPlatform[p]) earningsPerPlatform[p] = 0;
+      earningsPerPlatform[p] += Number(e.amount || 0);
     });
 
     // --- EARNINGS PER USER PER PLATFORM ---
     const earningsUserPlatform: Record<string, Record<string, number>> = {};
-
-    earnings.forEach(e => {
-      if (!earningsUserPlatform[e.user_id]) {
-        earningsUserPlatform[e.user_id] = {};
-      }
-      if (!earningsUserPlatform[e.user_id][e.platform]) {
-        earningsUserPlatform[e.user_id][e.platform] = 0;
-      }
-      earningsUserPlatform[e.user_id][e.platform] += Number(e.amount || 0);
+    earnings.forEach((e) => {
+      const uid = e.user_id;
+      const p = e.platform || "unknown";
+      if (!earningsUserPlatform[uid]) earningsUserPlatform[uid] = {};
+      if (!earningsUserPlatform[uid][p]) earningsUserPlatform[uid][p] = 0;
+      earningsUserPlatform[uid][p] += Number(e.amount || 0);
     });
 
-    // --- CAMPAIGN ANALYTICS ---
-    const campaignStats = campaigns.map(c => {
-      const campaignClips = clips.filter(cl => cl.campaign_id === c.id);
-      const approved = campaignClips.filter(cl => cl.status === "approved").length;
+    // --- CAMPAIGN ANALYTICS (best-effort without earnings.campaign_id) ---
+    const campaignStats = campaigns.map((c) => {
+      const campaignClips = clips.filter(
+        (cl) => String(cl.campaign_id) === String(c.id)
+      );
+      const approved = campaignClips.filter((cl) => cl.status === "approved").length;
 
+      const campaignUserIds = new Set(campaignClips.map((cl) => cl.user_id));
       const earned = earnings
-        .filter(e => e.campaign_id === c.id)
+        .filter((e) => campaignUserIds.has(e.user_id))
         .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
       return {
@@ -106,11 +115,10 @@ export async function GET() {
       campaignStats,
       leaderboard,
     });
-
-  } catch (error: any) {
-    console.error("Admin analytics error:", error);
+  } catch (err: any) {
+    console.error("Admin analytics fatal error:", err);
     return NextResponse.json(
-      { error: "Failed to load analytics" },
+      { error: err?.message || "Unknown server error" },
       { status: 500 }
     );
   }
